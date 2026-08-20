@@ -1,22 +1,32 @@
-Missão Marte — Exemplo OO (console)
-=====================================
+# Missão Marte Unifor
 
-Este é um exemplo minimalista para aplicar conceitos de Orientação a Objetos no projeto "Missão Marte Unifor".
+## Fobos e Deimos
 
-Conteúdo:
+- Integrante 1: Lucas Gomes 2522675
+- Integrante 2: Welington Da Silva 2522697
 
-- `src/missao` — código fonte Java (classes: `Nave`, `Passageiro`, `Professor`, `Engenheiro`, `Asteroide`, `Missao`, `Main`).
+## Repositório GitHub
 
-Compilar e executar (a partir da raiz do repositório):
+- [Link do repositório do GitHub](https://github.com/luckhaosbb/Atividade01_ProjArqSist.git)
+
+## Como compilar e executar o projeto
+
+A partir da pasta `src`, execute os seguintes comandos no terminal:
+
+1. Compile o projeto:
 
 ```bash
-javac -d out missaoMarteUnifor/oo-console/src/missao/*.java
-java -cp out missao.Main
+javac -d ../bin $(find . -name "*.java")
 ```
 
-Descrição rápida do jogo em console:
+2. Execute a aplicação:
 
-- Comandos: `w` (up), `s` (down), `a` (left), `d` (right), `c` (embarcar se houver passageiro na mesma posição), `q` (sair).
-- Objetivo: embarcar todos os passageiros sem colidir com asteroides.
+```bash
+java -cp ../bin Main
+```
 
-Use este projeto como ponto de partida para exercícios de refatoração (SOLID), testes e aplicação de padrões.
+> Observação: substitua `Main` pelo nome da classe principal do projeto, caso o nome da classe seja diferente.
+
+## Descrição do Projeto
+
+Projeto acadêmico em Java desenvolvido para simular a missão à Marte na Unifor, com foco em arquitetura de sistemas e organização do código.
