@@ -16,17 +16,25 @@ public class Main {
     public static void main(String[] args) {
 
         Random random = new Random();
-        int minX = -5;
-        int maxX = 5;
-        int minY = -5;
-        int maxY = 5;
-
         Path rankingPath = Paths.get("ranking.json");
         List<RankingEntry> ranking = loadRanking(rankingPath);
 
         exibirAnimacaoAbertura();
         
         Scanner scanner = new Scanner(System.in);
+        
+        System.out.print("Informe a largura do mapa (ex: 10): ");
+        int tamanhoX = scanner.nextInt();
+        System.out.print("Informe a altura do mapa (ex: 10): ");
+        int tamanhoY = scanner.nextInt();
+        
+        scanner.nextLine(); 
+
+        int minX = 0;
+        int maxX = tamanhoX - 1;
+        int minY = 0;
+        int maxY = tamanhoY - 1;
+
         System.out.print("Digite o nome do piloto: ");
         String pilotoNome = scanner.nextLine().trim();
         if (pilotoNome.isEmpty()) {
@@ -78,13 +86,21 @@ public class Main {
             boolean running = true;
 
             while (running) {
-                desenharMapa(missao, -5, 5, -5, 5, score, pilotoNome);
-                System.out.printf("Nave em (%d,%d) | Pontos: %d | Passageiros a bordo: %d | Passageiros restantes: %d\n",
-                        nave.getX(), nave.getY(), score, nave.getPassageiros().size(), missao.todosEmbarcados() ? 0 : missao.getPassageiros().size());
+                desenharMapa(missao, minX, maxX, minY, maxY, score, pilotoNome);
+                
+                System.out.printf("Nave em (%d,%d) | Vidas: %d | Pontos: %d | Passageiros a bordo: %d | Passageiros restantes: %d\n",
+                        nave.getX(), nave.getY(), nave.getVidas(), score, nave.getPassageiros().size(), missao.todosEmbarcados() ? 0 : missao.getPassageiros().size());
 
                 if (missao.verificaColisao()) {
-                    System.out.println("Colisão com asteroide! Missão abortada.");
-                    break;
+                    nave.perderVida(); 
+                    System.out.println("💥 BOOM! Você colidiu com um asteroide e perdeu uma vida!");
+                    
+                    if (nave.estaDestruida()) {
+                        System.out.println("Sua nave foi totalmente destruída! Missão fracassada.");
+                        break;
+                    } else {
+                        System.out.println("⚠️ ALERTA: Mova a nave imediatamente para não sofrer mais danos!");
+                    }
                 }
 
                 System.out.print("Para onde ir? ");
@@ -103,8 +119,8 @@ public class Main {
                         } else {
                             boolean ok = missao.embarcarPassageiroNaPosicao();
                             if (ok) {
-                                score += 10;
-                                System.out.println("Passageiro embarcado. +10 pontos!");
+                                score += p.calcularPontuacao();
+                                System.out.printf("Passageiro embarcado. +%d pontos!" , p.calcularPontuacao());
                             } else {
                                 System.out.println("Nave cheia, não foi possível embarcar.");
                             }
