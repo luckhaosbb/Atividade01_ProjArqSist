@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
+
         Random random = new Random();
         int minX = -5;
         int maxX = 5;
@@ -23,6 +24,8 @@ public class Main {
         Path rankingPath = Paths.get("ranking.json");
         List<RankingEntry> ranking = loadRanking(rankingPath);
 
+        exibirAnimacaoAbertura();
+        
         Scanner scanner = new Scanner(System.in);
         System.out.print("Digite o nome do piloto: ");
         String pilotoNome = scanner.nextLine().trim();
@@ -163,10 +166,10 @@ public class Main {
     }
 
     private static Missao criarNovaMissao(Random random, int minX, int maxX, int minY, int maxY) {
-        Nave nave = new Nave("A-1", 3);
+        Nave nave = new Nave("A-1", 4);
         Missao missao = new Missao(nave);
 
-        while (missao.getPassageiros().size() < 3) {
+        while (missao.getPassageiros().size() < 4) {
             int x = random.nextInt(maxX - minX + 1) + minX;
             int y = random.nextInt(maxY - minY + 1) + minY;
             if (x == nave.getX() && y == nave.getY()) continue;
@@ -175,6 +178,8 @@ public class Main {
                 missao.addPassageiro(new Professor("Dr. Silva", x, y));
             } else if (missao.getPassageiros().size() == 1) {
                 missao.addPassageiro(new Engenheiro("Eng. Rosa", x, y));
+            } else if (missao.getPassageiros().size() == 2){
+                missao.addPassageiro(new Astronauta("Ast. Neil Armstrong", x, y));
             } else {
                 missao.addPassageiro(new Professor("Dr. Lima", x, y));
             }
@@ -221,12 +226,14 @@ public class Main {
             for (int x = minX; x <= maxX; x++) {
                 char symbol = '.';
                 if (missao.getNave().getX() == x && missao.getNave().getY() == y) {
-                    symbol = 'N';
+                    symbol = '∆';
                 } else {
                     for (Passageiro p : missao.getPassageiros()) {
                         if (p.getX() == x && p.getY() == y) {
                             if (p instanceof Engenheiro) {
                                 symbol = 'E';
+                            } else if (p instanceof Astronauta){
+                                symbol = 'A';
                             } else {
                                 symbol = 'P';
                             }
@@ -236,7 +243,7 @@ public class Main {
                     if (symbol == '.') {
                         for (Asteroide a : missao.getAsteroides()) {
                             if (a.getX() == x && a.getY() == y) {
-                                symbol = 'A';
+                                symbol = '✷';
                                 break;
                             }
                         }
@@ -352,6 +359,34 @@ public class Main {
         private RankingEntry(String name, int score) {
             this.name = name;
             this.score = score;
+        }
+    }
+
+    private static void exibirAnimacaoAbertura() {
+
+        String[] logo = {
+           "█   █ ███  ████  ████  ███   ███     █   █  ███  ████  █████ █████",
+           "██ ██  █  █     █     █   █ █   █    ██ ██ █   █ █   █   █   █    ", 
+           "█ █ █  █   ███   ███  █████ █   █    █ █ █ █████ ████    █   ████ ", 
+           "█   █  █      █     █ █   █ █   █    █   █ █   █ █  █    █   █    ", 
+           "█   █ ███ ████  ████  █   █  ███     █   █ █   █ █   █   █   █████" 
+        };
+
+
+        try {
+            System.out.println("\n[SISTEMA] Estabelecendo conexao com a base...\n");
+            Thread.sleep(800); // Pausa dramática
+
+            for (String linha : logo) {
+                System.out.println(linha);
+                Thread.sleep(150); // Imprime linha por linha criando um efeito cascata
+            }
+            
+            System.out.println("\n      >>> BEM-VINDO A UNIFOR - BASE DE MARTE <<<\n");
+            Thread.sleep(1000);
+            
+        } catch (InterruptedException e) {
+            System.out.println("Erro ao carregar a abertura.");
         }
     }
 }
