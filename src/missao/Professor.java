@@ -7,7 +7,7 @@ public class Professor extends Passageiro {
     }
 
     @Override
-    public integer calcularPontuacao(){
+    public int calcularPontuacao(){
         return 20;
     }
 }

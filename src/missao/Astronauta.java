@@ -7,7 +7,7 @@ public class Astronauta extends Passageiro {
     }
 
     @Override
-    public integer calcularPontuacao(){
+    public int calcularPontuacao(){
         return 15;
     }
 }
