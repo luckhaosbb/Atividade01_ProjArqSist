@@ -22,7 +22,31 @@ public class Main {
         exibirAnimacaoAbertura();
         
         Scanner scanner = new Scanner(System.in);
-        
+
+        System.out.print("Digite o nome do piloto: ");
+        String pilotoNome = scanner.nextLine().trim();
+        if (pilotoNome.isEmpty()) {
+            pilotoNome = "Piloto Anônimo";
+        }
+
+        System.out.println("\nEscolha a Dificuldade da Missão:");
+        System.out.println("1 - FÁCIL (Mais recursos, menos obstáculos)");
+        System.out.println("2 - MÉDIO (Equilibrado)");
+        System.out.println("3 - DIFÍCIL (Poucos recursos, muitos obstáculos)");
+        System.out.print("Sua escolha: ");
+
+        int opDificuldade = scanner.nextInt();
+        scanner.nextLine();
+
+        Dificuldade dificuldadeEscolhida;
+        switch (opDificuldade) {
+            case 1 -> dificuldadeEscolhida = Dificuldade.FACIL;
+            case 3 -> dificuldadeEscolhida = Dificuldade.DIFICIL;
+            default -> dificuldadeEscolhida = Dificuldade.MEDIO;
+        }
+
+        System.out.println("Dificuldade definida para: " + dificuldadeEscolhida);
+
         System.out.print("Informe a largura do mapa (ex: 10): ");
         int tamanhoX = scanner.nextInt();
         System.out.print("Informe a altura do mapa (ex: 10): ");
@@ -34,12 +58,6 @@ public class Main {
         int maxX = tamanhoX - 1;
         int minY = 0;
         int maxY = tamanhoY - 1;
-
-        System.out.print("Digite o nome do piloto: ");
-        String pilotoNome = scanner.nextLine().trim();
-        if (pilotoNome.isEmpty()) {
-            pilotoNome = "Piloto Anônimo";
-        }
 
         System.out.println("================================================================");
         System.out.println("Missão Marte Unifor — Console");
@@ -80,23 +98,26 @@ public class Main {
 
         boolean playAgain = true;
         while (playAgain) {
-            Missao missao = criarNovaMissao(random, minX, maxX, minY, maxY);
+            Missao missao = criarNovaMissao(random, minX, maxX, minY, maxY, dificuldadeEscolhida);
             Nave nave = missao.getNave();
-            int score = 20;
+            int score = dificuldadeEscolhida.getPontuacaoInicial();
             boolean running = true;
 
+            Inimigo alien = new Inimigo(maxX / 2, maxY / 2);
+
             while (running) {
-                desenharMapa(missao, minX, maxX, minY, maxY, score, pilotoNome);
+                desenharMapa(missao, alien, minX, maxX, minY, maxY, score, pilotoNome);
                 
                 System.out.printf("Nave em (%d,%d) | Vidas: %d | Pontos: %d | Passageiros a bordo: %d | Passageiros restantes: %d\n",
                         nave.getX(), nave.getY(), nave.getVidas(), score, nave.getPassageiros().size(), missao.todosEmbarcados() ? 0 : missao.getPassageiros().size());
 
                 if (missao.verificaColisao()) {
-                    nave.perderVida(); 
+                    nave.perderVidas();
                     System.out.println("💥 BOOM! Você colidiu com um asteroide e perdeu uma vida!");
                     
                     if (nave.estaDestruida()) {
                         System.out.println("Sua nave foi totalmente destruída! Missão fracassada.");
+                        salvarRegistro(new RegistroPartida(nave.getPassageiros().size(), dificuldadeEscolhida, score));
                         break;
                     } else {
                         System.out.println("⚠️ ALERTA: Mova a nave imediatamente para não sofrer mais danos!");
@@ -131,14 +152,33 @@ public class Main {
                     default: System.out.println("Comando desconhecido.");
                 }
 
+                alien.mover(maxX, maxY);
+                
+                if (alien.verificarColisao(nave.getX(), nave.getY())) {
+                    System.out.println("🚨 ALERTA DE COLISÃO! O Alienígena atacou a nave!");
+                    nave.perderVidas();
+                    
+                    if (nave.estaDestruida()) {
+                        System.out.println("Sua nave foi totalmente destruída pelo Alienígena! Missão fracassada.");
+                        salvarRegistro(new RegistroPartida(nave.getPassageiros().size(), dificuldadeEscolhida, score));
+                        break; 
+                    } else {
+                        System.out.println("⚠️ ALERTA: Fuja, o Alienígena está na sua cola!");
+                    }
+                }
+                
                 if (score <= 0) {
                     System.out.println("Pontuação zerada. Missão perdida.");
+                    salvarRegistro(new RegistroPartida(nave.getPassageiros().size(), dificuldadeEscolhida, score));
                     break;
                 }
 
                 if (missao.todosEmbarcados()) {
                     System.out.println("Todos os passageiros embarcados! Missão concluída com sucesso.");
                     System.out.printf("Pontuação final: %d\n", score);
+
+                    salvarRegistro(new RegistroPartida(nave.getPassageiros().size(), dificuldadeEscolhida, score));
+                    
                     if (score > 0 && isTopScore(ranking, score)) {
                         ranking.add(new RankingEntry(pilotoNome, score));
                         ranking = ranking.stream()
@@ -181,7 +221,21 @@ public class Main {
         }
     }
 
-    private static Missao criarNovaMissao(Random random, int minX, int maxX, int minY, int maxY) {
+    private static void salvarRegistro(RegistroPartida registro) {
+        Path logPath = Paths.get("historico_partidas.txt");
+        try {
+            String linha = registro.paraTexto() + System.lineSeparator();
+            if (!Files.exists(logPath)) {
+                Files.writeString(logPath, linha, StandardCharsets.UTF_8);
+            } else {
+                Files.writeString(logPath, linha, StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.APPEND);
+            }
+        } catch (IOException e) {
+            System.out.println("Não foi possível registrar o histórico: " + e.getMessage());
+        }
+    }
+
+    private static Missao criarNovaMissao(Random random, int minX, int maxX, int minY, int maxY, Dificuldade dif) {
         Nave nave = new Nave("A-1", 4);
         Missao missao = new Missao(nave);
 
@@ -201,7 +255,7 @@ public class Main {
             }
         }
 
-        while (missao.getAsteroides().size() < 2) {
+        while (missao.getAsteroides().size() < dif.getQuantidadeObstaculos()) {
             int x = random.nextInt(maxX - minX + 1) + minX;
             int y = random.nextInt(maxY - minY + 1) + minY;
             if (x == nave.getX() && y == nave.getY()) continue;
@@ -223,7 +277,7 @@ public class Main {
         return false;
     }
 
-    private static void desenharMapa(Missao missao, int minX, int maxX, int minY, int maxY, int score, String pilotoNome) {
+    private static void desenharMapa(Missao missao, Inimigo alien, int minX, int maxX, int minY, int maxY, int score, String pilotoNome) {
         System.out.println();
         System.out.printf("Mapa da Missão (Pontos: %d) - Piloto: %s%n", score, pilotoNome);
         System.out.print("    ");
@@ -243,6 +297,8 @@ public class Main {
                 char symbol = '.';
                 if (missao.getNave().getX() == x && missao.getNave().getY() == y) {
                     symbol = '∆';
+                } else if (alien.getX() == x && alien.getY() == y) {
+                    symbol = '§';
                 } else {
                     for (Passageiro p : missao.getPassageiros()) {
                         if (p.getX() == x && p.getY() == y) {
@@ -270,7 +326,7 @@ public class Main {
             System.out.println();
         }
 
-        System.out.println("Legenda: N=Nave, P=Professor, E=Engenheiro, A=Asteroide, .=Vazio");
+        System.out.println("\nLegenda: ∆=Nave, §=Inimigo, P=Professor (+10), E=Engenheiro (+15), A=Astronauta (+20), ✷=Asteroide, .=Vazio");
         System.out.println("Resumo de comandos: w(cima)/s(baixo)/a(esquerda)/d(direita) mover, c embarcar, q sair");
         System.out.println("Passageiros restantes:");
         for (Passageiro p : missao.getPassageiros()) {

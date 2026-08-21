@@ -18,7 +18,8 @@ public class Passageiro {
     public int getX() { return x; }
     public int getY() { return y; }
 
-    public integer calcularPontuacao() {
-    return null;
+    public int calcularPontuacao() {
+    return 0;
     }
+
 }
