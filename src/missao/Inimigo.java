@@ -1,33 +1,38 @@
 package missao;
+
 import java.util.Random;
 
 public class Inimigo {
+    private String nome;
     private int x;
     private int y;
-    private Random random = new Random();
 
-    public Inimigo(int x, int y) {
+    public Inimigo(String nome, int x, int y) {
+        this.nome = nome;
         this.x = x;
         this.y = y;
     }
-    
+
+    public String getNome() { return nome; }
     public int getX() { return x; }
     public int getY() { return y; }
 
-    public void mover(int limiteX, int limiteY) {
-        int direcao = random.nextInt(4);
-        
-        switch (direcao) {
-            case 0 -> y = Math.max(0, y - 1);
-            case 1 -> y = Math.min(limiteY, y + 1);
-            case 2 -> x = Math.max(0, x - 1);
-            case 3 -> x = Math.min(limiteX, x + 1);
+    public char getSimbolo() { return '§'; }
+
+    public void mover(Random random, int minX, int maxX, int minY, int maxY) {
+        switch (random.nextInt(4)) {
+            case 0: y = Math.max(minY, y - 1); break;
+            case 1: y = Math.min(maxY, y + 1); break;
+            case 2: x = Math.max(minX, x - 1); break;
+            default: x = Math.min(maxX, x + 1); break;
         }
     }
 
-    public boolean verificarColisao(int getX, int getY) {
-        return this.x == getX && this.y == getY;
+    public boolean colideCom(Nave nave) {
+        return nave.getX() == x && nave.getY() == y;
     }
 
-    
+    public boolean estaNaPosicao(int x, int y) {
+        return this.x == x && this.y == y;
+    }
 }
