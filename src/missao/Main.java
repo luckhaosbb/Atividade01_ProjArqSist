@@ -177,9 +177,14 @@ public class Main {
         System.out.println("Cada movimento custa 1 ponto. Embarque: Professor +10, Engenheiro +15, Astronauta +20.");
 
         Terminal.modoJogo(true);
-        Terminal.aguardarTecla(Terminal.isModoDireto()
-                ? "\nAs setas também funcionam. Pressione qualquer tecla para iniciar a missão..."
-                : "\nPressione Enter para iniciar a missão...");
+        if (Terminal.isModoDireto()) {
+            Terminal.aguardarTecla("\nAs setas também funcionam."
+                    + " Pressione qualquer tecla para iniciar a missão...");
+        } else {
+            System.out.println();
+            System.out.println(Terminal.motivoDoModoLinha());
+            Terminal.aguardarTecla("\nPressione Enter para iniciar a missão...");
+        }
     }
 
     private static void jogarPartida(Missao missao, String piloto, Ranking ranking) {

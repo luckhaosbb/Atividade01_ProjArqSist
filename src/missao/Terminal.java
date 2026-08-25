@@ -28,11 +28,18 @@ public final class Terminal {
     public static boolean isGraficoPorQuadros() { return graficoPorQuadros; }
 
     public static void iniciar() {
-        boolean interativo = System.console() != null;
-        graficoPorQuadros = interativo;
-        configuracaoOriginal = interativo ? stty("-g") : null;
+        configuracaoOriginal = stty("-g");
         sttyDisponivel = configuracaoOriginal != null && !configuracaoOriginal.isEmpty();
+        graficoPorQuadros = sttyDisponivel;
         Runtime.getRuntime().addShutdownHook(new Thread(Terminal::restaurar));
+    }
+
+    /** Explica ao jogador por que o modo tecla a tecla não está disponível. */
+    public static String motivoDoModoLinha() {
+        return "Console sem terminal interativo: o jogo segue no modo linha + Enter.\n"
+                + "Para jogar sem Enter, execute em um terminal (Terminal, iTerm, PowerShell)\n"
+                + "ou, no IntelliJ, marque 'Emulate terminal in output console' na configuração\n"
+                + "de execução (Run/Debug Configurations > Modify options).";
     }
 
     /**
@@ -131,13 +138,17 @@ public final class Terminal {
     }
 
     /**
-     * O redirecionamento de /dev/tty é necessário porque a entrada padrão da JVM
-     * não é repassada ao processo do stty.
+     * Herdar a entrada padrão faz o stty agir exatamente sobre o descritor que a
+     * JVM lê. Redirecionar de /dev/tty configuraria o terminal controlador, que
+     * pode ser outro dispositivo — é o caso do console de Run das IDEs, onde a
+     * entrada do processo é um pipe. Assim, quando não há terminal de verdade o
+     * stty falha, que é justamente como detectamos a necessidade do modo linha.
      */
     private static String stty(String... argumentos) {
         try {
             ProcessBuilder pb = new ProcessBuilder("sh", "-c",
-                    "stty " + String.join(" ", argumentos) + " < /dev/tty");
+                    "stty " + String.join(" ", argumentos));
+            pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
             pb.redirectErrorStream(true);
             Process processo = pb.start();
             String saida = new String(lerTudo(processo)).trim();

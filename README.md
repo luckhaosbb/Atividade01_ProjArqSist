@@ -69,6 +69,13 @@ Em Windows, ou quando a entrada vem de arquivo/pipe, não há `stty`: o jogo
 detecta isso sozinho e volta ao modo linha + Enter, sem perder nenhuma
 funcionalidade. Nenhuma biblioteca externa é usada em qualquer um dos casos.
 
+> **Rodando pela IDE?** O console de Run do IntelliJ e do NetBeans não é um
+> terminal de verdade — a entrada do processo é um pipe, então o jogo cai no
+> modo linha + Enter e avisa isso na tela. Para jogar sem Enter, execute pelo
+> terminal com os comandos acima ou, no IntelliJ, marque
+> **Emulate terminal in output console** em *Run/Debug Configurations >
+> Modify options*.
+
 **Objetivo:** embarcar todos os passageiros e depois voltar à Plataforma de Pouso
 `L` na coordenada `(0,0)`. Cada movimento custa 1 ponto; colidir com asteroide ou
 com o alienígena custa 1 vida.
