@@ -4,33 +4,34 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
 
 public class Main {
 
     private static final Random RANDOM = new Random();
-    private static final Scanner SCANNER = new Scanner(System.in);
 
     private static final String[] NOMES_PROFESSOR = {"Dr. Silva", "Dra. Lima", "Dr. Moura"};
     private static final String[] NOMES_ENGENHEIRO = {"Eng. Rosa", "Eng. Tavares", "Eng. Duarte"};
     private static final String[] NOMES_ASTRONAUTA = {"Ast. Armstrong", "Ast. Aldrin", "Ast. Ride"};
 
     public static void main(String[] args) {
-        Ranking ranking = new Ranking();
-        exibirAnimacaoAbertura();
+        Terminal.iniciar();
+        try {
+            Ranking ranking = new Ranking();
+            exibirAnimacaoAbertura();
 
-        boolean executando = true;
-        while (executando) {
-            switch (exibirMenuPrincipal()) {
-                case 1: iniciarNovaMissao(ranking); break;
-                case 2: exibirRanking(ranking); break;
-                case 3: resetarRanking(ranking); break;
-                default: executando = false; break;
+            boolean executando = true;
+            while (executando) {
+                switch (exibirMenuPrincipal()) {
+                    case 1: iniciarNovaMissao(ranking); break;
+                    case 2: exibirRanking(ranking); break;
+                    case 3: resetarRanking(ranking); break;
+                    default: executando = false; break;
+                }
             }
+            System.out.println("\nCâmbio, desligo. Fim da execução.");
+        } finally {
+            Terminal.restaurar();
         }
-
-        SCANNER.close();
-        System.out.println("\nCâmbio, desligo. Fim da execução.");
     }
 
     private static int exibirMenuPrincipal() {
@@ -62,7 +63,7 @@ public class Main {
     private static void resetarRanking(Ranking ranking) {
         System.out.print("Isso apaga todo o conteúdo de " + ranking.getArquivo()
                 + ". Confirma? (s/n): ");
-        String resposta = SCANNER.nextLine().trim().toLowerCase();
+        String resposta = lerLinhaOuSair().trim().toLowerCase();
         if (resposta.startsWith("s")) {
             ranking.resetar();
             System.out.println("Ranking resetado com sucesso.");
@@ -73,7 +74,7 @@ public class Main {
 
     private static void iniciarNovaMissao(Ranking ranking) {
         System.out.print("\nDigite o nome do piloto: ");
-        String piloto = SCANNER.nextLine().trim();
+        String piloto = lerLinhaOuSair().trim();
         if (piloto.isEmpty()) {
             piloto = "Piloto Anônimo";
         }
@@ -174,8 +175,11 @@ public class Main {
                 d.getRotulo(), d.getRecursosIniciais(), d.getPontuacaoInicial(),
                 missao.getTotalPassageiros());
         System.out.println("Cada movimento custa 1 ponto. Embarque: Professor +10, Engenheiro +15, Astronauta +20.");
-        System.out.println("Pressione Enter para iniciar a missão...");
-        SCANNER.nextLine();
+
+        Terminal.modoJogo(true);
+        Terminal.aguardarTecla(Terminal.isModoDireto()
+                ? "\nAs setas também funcionam. Pressione qualquer tecla para iniciar a missão..."
+                : "\nPressione Enter para iniciar a missão...");
     }
 
     private static void jogarPartida(Missao missao, String piloto, Ranking ranking) {
@@ -186,80 +190,82 @@ public class Main {
         boolean vitoria = false;
         boolean avisouPlataforma = false;
         boolean emJogo = true;
+        List<String> eventos = new ArrayList<>();
 
-        while (emJogo) {
-            desenharMapa(missao, pontuacao, piloto);
-            exibirStatus(missao, pontuacao);
+        try {
+            while (emJogo) {
+                desenharQuadro(missao, pontuacao, piloto, eventos);
+                eventos.clear();
 
-            if (missao.todosEmbarcados() && !avisouPlataforma) {
-                System.out.println("\n✅ Todos os passageiros estão a bordo!");
-                System.out.printf("🛬 Retorne à Plataforma de Pouso L em (%d,%d) para concluir a missão.%n",
-                        Missao.PLATAFORMA_X, Missao.PLATAFORMA_Y);
-                avisouPlataforma = true;
-            }
-
-            System.out.print("\nPara onde ir? ");
-            String linha = SCANNER.nextLine().trim().toLowerCase();
-            if (linha.isEmpty()) continue;
-            char comando = linha.charAt(0);
-
-            if (comando == 'q') {
-                System.out.println("Missão abandonada pelo piloto.");
-                break;
-            }
-
-            if (comando == 'c') {
-                pontuacao += tentarEmbarcar(missao);
-            } else if (comando == 'w' || comando == 'a' || comando == 's' || comando == 'd') {
-                int xAnterior = nave.getX();
-                int yAnterior = nave.getY();
-                boolean moveu = nave.mover(comando, missao.getMinX(), missao.getMaxX(),
-                        missao.getMinY(), missao.getMaxY());
-                if (!moveu) {
-                    System.out.println("🚧 A borda do mapa bloqueou o movimento. Nenhum ponto foi gasto.");
-                    continue;
+                if (missao.todosEmbarcados() && !avisouPlataforma) {
+                    eventos.add("✅ Todos os passageiros estão a bordo!");
+                    eventos.add(String.format("🛬 Retorne à Plataforma de Pouso L em (%d,%d).",
+                            Missao.PLATAFORMA_X, Missao.PLATAFORMA_Y));
+                    avisouPlataforma = true;
                 }
-                movimentos++;
-                pontuacao--;
 
-                if (missao.verificaColisao()) {
-                    nave.perderVida();
-                    nave.reposicionar(xAnterior, yAnterior);
-                    System.out.println("💥 BOOM! Você colidiu com um asteroide e perdeu uma vida!");
-                    if (nave.estaDestruida()) {
-                        System.out.println("Sua nave foi totalmente destruída! Missão fracassada.");
-                        break;
-                    }
-                    System.out.println("⚠️ A nave recuou para a posição anterior. Vidas restantes: " + nave.getVidas());
-                }
-            } else {
-                System.out.println("Comando desconhecido. Use w, a, s, d, c ou q.");
-                continue;
-            }
+                char comando = Terminal.lerTecla();
 
-            missao.moverInimigos(RANDOM);
-            Inimigo inimigo = missao.inimigoEmColisao();
-            if (inimigo != null) {
-                nave.perderVida();
-                System.out.println("🚨 ALERTA! " + inimigo.getNome() + " atacou a nave!");
-                if (nave.estaDestruida()) {
-                    System.out.println("Sua nave foi destruída pelo alienígena! Missão fracassada.");
+                if (comando == 'q') {
+                    eventos.add("Missão abandonada pelo piloto.");
                     break;
                 }
-                System.out.println("⚠️ Fuja, o alienígena está na sua cola! Vidas restantes: " + nave.getVidas());
+
+                if (comando == 'c') {
+                    pontuacao += tentarEmbarcar(missao, eventos);
+                } else if (comando == 'w' || comando == 'a' || comando == 's' || comando == 'd') {
+                    int xAnterior = nave.getX();
+                    int yAnterior = nave.getY();
+                    if (!nave.mover(comando, missao.getMinX(), missao.getMaxX(),
+                            missao.getMinY(), missao.getMaxY())) {
+                        eventos.add("🚧 A borda do mapa bloqueou o movimento. Nenhum ponto foi gasto.");
+                        continue;
+                    }
+                    movimentos++;
+                    pontuacao--;
+
+                    if (missao.verificaColisao()) {
+                        nave.perderVida();
+                        nave.reposicionar(xAnterior, yAnterior);
+                        eventos.add("💥 BOOM! Você colidiu com um asteroide e perdeu uma vida!");
+                        if (nave.estaDestruida()) {
+                            eventos.add("Sua nave foi totalmente destruída! Missão fracassada.");
+                            break;
+                        }
+                        eventos.add("⚠️ A nave recuou. Vidas restantes: " + nave.getVidas());
+                    }
+                } else {
+                    continue;
+                }
+
+                missao.moverInimigos(RANDOM);
+                Inimigo inimigo = missao.inimigoEmColisao();
+                if (inimigo != null) {
+                    nave.perderVida();
+                    eventos.add("🚨 ALERTA! " + inimigo.getNome() + " atacou a nave!");
+                    if (nave.estaDestruida()) {
+                        eventos.add("Sua nave foi destruída pelo alienígena! Missão fracassada.");
+                        break;
+                    }
+                    eventos.add("⚠️ Fuja! Vidas restantes: " + nave.getVidas());
+                }
+
+                if (pontuacao <= 0) {
+                    eventos.add("⛽ Combustível esgotado (pontuação zerada). Missão perdida.");
+                    break;
+                }
+
+                if (missao.missaoConcluida()) {
+                    eventos.add("🛬 POUSO CONFIRMADO NA PLATAFORMA (0,0)!");
+                    eventos.add("Missão concluída com sucesso, piloto " + piloto + "!");
+                    vitoria = true;
+                    emJogo = false;
+                }
             }
 
-            if (pontuacao <= 0) {
-                System.out.println("⛽ Combustível esgotado (pontuação zerada). Missão perdida.");
-                break;
-            }
-
-            if (missao.missaoConcluida()) {
-                System.out.println("\n🛬 POUSO CONFIRMADO NA PLATAFORMA (0,0)!");
-                System.out.println("Missão concluída com sucesso, piloto " + piloto + "!");
-                vitoria = true;
-                emJogo = false;
-            }
+            desenharQuadro(missao, pontuacao, piloto, eventos);
+        } finally {
+            Terminal.modoJogo(false);
         }
 
         long duracao = (System.currentTimeMillis() - inicio) / 1000;
@@ -270,35 +276,22 @@ public class Main {
         exibirEstatisticas(registro);
         registrarResultado(registro, ranking);
         exibirRanking(ranking);
+        Terminal.aguardarTecla("\nPressione Enter para voltar ao menu...");
     }
 
-    private static int tentarEmbarcar(Missao missao) {
+    private static int tentarEmbarcar(Missao missao, List<String> eventos) {
         Passageiro p = missao.passagemNaPosicao();
         if (p == null) {
-            System.out.println("Nenhum passageiro nesta posição.");
+            eventos.add("Nenhum passageiro nesta posição.");
             return 0;
         }
         if (!missao.embarcarPassageiroNaPosicao()) {
-            System.out.println("Nave cheia, não foi possível embarcar.");
+            eventos.add("Nave cheia, não foi possível embarcar.");
             return 0;
         }
-        System.out.printf("✅ %s (%s) embarcado. +%d pontos!%n",
-                p.getNome(), p.getTipo(), p.calcularPontuacao());
+        eventos.add(String.format("✅ %s (%s) embarcado. +%d pontos!",
+                p.getNome(), p.getTipo(), p.calcularPontuacao()));
         return p.calcularPontuacao();
-    }
-
-    private static void exibirStatus(Missao missao, int pontuacao) {
-        Nave nave = missao.getNave();
-        System.out.printf("Nave em (%d,%d) | Vidas: %d | Pontos: %d | A bordo: %d/%d | Restantes no mapa: %d%n",
-                nave.getX(), nave.getY(), nave.getVidas(), pontuacao,
-                nave.getPassageiros().size(), nave.getCapacidade(), missao.getPassageiros().size());
-
-        // O símbolo da nave cobre o do passageiro no mapa, então avisamos por texto.
-        Passageiro aqui = missao.passagemNaPosicao();
-        if (aqui != null) {
-            System.out.printf("👆 %s (%s) está nesta casa. Digite 'c' para embarcar (+%d).%n",
-                    aqui.getNome(), aqui.getTipo(), aqui.calcularPontuacao());
-        }
     }
 
     private static void exibirEstatisticas(RegistroPartida registro) {
@@ -333,9 +326,21 @@ public class Main {
         }
     }
 
-    private static void desenharMapa(Missao missao, int pontuacao, String piloto) {
-        System.out.println();
-        System.out.printf("Mapa da Missão (Pontos: %d) - Piloto: %s%n", pontuacao, piloto);
+    /** Redesenha a tela inteira a cada turno, para o mapa atualizar no lugar em
+     *  vez de empilhar quadros antigos na rolagem do terminal. */
+    private static void desenharQuadro(Missao missao, int pontuacao, String piloto,
+                                       List<String> eventos) {
+        Terminal.limparTela();
+        Nave nave = missao.getNave();
+
+        System.out.println("================================================================");
+        System.out.printf(" MISSÃO MARTE UNIFOR   Piloto: %s%n", piloto);
+        System.out.printf(" Vidas: %s  Pontos: %-4d  A bordo: %d/%d  No mapa: %d%n",
+                barraDeVidas(nave.getVidas()), pontuacao,
+                nave.getPassageiros().size(), nave.getCapacidade(),
+                missao.getPassageiros().size());
+        System.out.println("================================================================");
+
         System.out.print("    ");
         for (int x = missao.getMinX(); x <= missao.getMaxX(); x++) {
             System.out.printf(" %2d", x);
@@ -356,8 +361,7 @@ public class Main {
         }
 
         System.out.println("\nLegenda: ∆=Nave, L=Plataforma de Pouso, §=Inimigo, "
-                + "P=Professor (+10), E=Engenheiro (+15), A=Astronauta (+20), #=Asteroide, .=Vazio");
-        System.out.println("Comandos: w(cima)/s(baixo)/a(esquerda)/d(direita), c embarcar, q abandonar");
+                + "P=Professor (+10), E=Engenheiro (+15), A=Astronauta (+20), #=Asteroide");
 
         if (!missao.getPassageiros().isEmpty()) {
             System.out.println("Passageiros restantes:");
@@ -366,6 +370,31 @@ public class Main {
                         p.getNome(), p.getTipo(), p.getX(), p.getY(), p.calcularPontuacao());
             }
         }
+
+        // O símbolo da nave cobre o do passageiro no mapa, então avisamos por texto.
+        Passageiro aqui = missao.passagemNaPosicao();
+        if (aqui != null) {
+            System.out.printf("👆 %s está nesta casa — tecle 'c' para embarcar (+%d).%n",
+                    aqui.getNome(), aqui.calcularPontuacao());
+        }
+
+        for (String evento : eventos) {
+            System.out.println(evento);
+        }
+
+        System.out.println();
+        System.out.print(Terminal.isModoDireto()
+                ? "Mova com W A S D ou as setas | C embarcar | Q sair > "
+                : "Para onde ir? (w/a/s/d, c, q) > ");
+        System.out.flush();
+    }
+
+    private static String barraDeVidas(int vidas) {
+        StringBuilder barra = new StringBuilder();
+        for (int i = 0; i < Math.max(vidas, 0); i++) {
+            barra.append("♥");
+        }
+        return barra.length() == 0 ? "—" : barra.toString();
     }
 
     private static char simboloDaCasa(Missao missao, int x, int y) {
@@ -383,12 +412,22 @@ public class Main {
         return '.';
     }
 
+    /** Encerra o jogo quando a entrada acaba (EOF), em vez de repetir o prompt para sempre. */
+    private static String lerLinhaOuSair() {
+        String linha = Terminal.lerLinha();
+        if (linha == null) {
+            Terminal.restaurar();
+            System.out.println("\nEntrada encerrada. Fim da execução.");
+            System.exit(0);
+        }
+        return linha;
+    }
+
     private static int lerInteiro(String mensagem, int minimo, int maximo) {
         while (true) {
             System.out.print(mensagem);
-            String entrada = SCANNER.nextLine().trim();
             try {
-                int valor = Integer.parseInt(entrada);
+                int valor = Integer.parseInt(lerLinhaOuSair().trim());
                 if (valor >= minimo && valor <= maximo) {
                     return valor;
                 }
