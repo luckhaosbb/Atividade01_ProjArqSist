@@ -19,7 +19,14 @@ public class Passageiro {
     public int getY() { return y; }
 
     public int calcularPontuacao() {
-    return 0;
+        return 5;
     }
 
+    public char getSimbolo() {
+        return 'T';
+    }
+
+    public boolean estaNaPosicao(int x, int y) {
+        return this.x == x && this.y == y;
+    }
 }

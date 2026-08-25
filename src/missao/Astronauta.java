@@ -7,7 +7,12 @@ public class Astronauta extends Passageiro {
     }
 
     @Override
-    public int calcularPontuacao(){
-        return 15;
+    public int calcularPontuacao() {
+        return 20;
+    }
+
+    @Override
+    public char getSimbolo() {
+        return 'A';
     }
 }
