@@ -28,7 +28,15 @@ public class Nave {
     public int getVidas() { return vidas; }
     public List<Passageiro> getPassageiros() { return passageiros; }
 
-    /** @return false se a borda bloqueou o movimento — nesse caso não custa combustível. */
+    public void moveUp() { y--; }
+    public void moveDown() { y++; }
+    public void moveLeft() { x--; }
+    public void moveRight() { x++; }
+
+    /**
+     * Valida os limites do mapa e delega o passo aos métodos de movimento.
+     * @return false se a borda bloqueou o movimento — nesse caso não custa combustível.
+     */
     public boolean mover(char direcao, int minX, int maxX, int minY, int maxY) {
         int novoX = x;
         int novoY = y;
@@ -42,8 +50,12 @@ public class Nave {
         if (novoX < minX || novoX > maxX || novoY < minY || novoY > maxY) {
             return false;
         }
-        this.x = novoX;
-        this.y = novoY;
+        switch (direcao) {
+            case 'w': moveUp(); break;
+            case 's': moveDown(); break;
+            case 'a': moveLeft(); break;
+            default:  moveRight(); break;
+        }
         return true;
     }
 
